@@ -1,0 +1,15 @@
+{
+  "name": "Ovation — Employee Recognition & Rewards",
+  "short_name": "Ovation",
+  "description": "Recognize great work, reward your team, and build company culture.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f5f9",
+  "theme_color": "#6aa6e0",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
