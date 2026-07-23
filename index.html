@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
 <title>Ovation — Employee Recognition & Rewards</title>
 <meta name="description" content="Ovation — recognize great work, reward your team, and build company culture." />
 <meta name="theme-color" content="#6aa6e0" />
@@ -384,7 +384,10 @@ textarea.note:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(110,16
   .content{padding:18px 15px 90px}
   .topbar{padding:0 16px;height:58px}
   .topbar .page-sub{display:none}
-  .role-switch{display:none}
+  .topbar{gap:8px}
+  .role-switch{padding:2px}
+  .role-switch button{padding:6px 11px;font-size:12px}
+  .topbar .page-title{font-size:17px}
   .stat-grid{gap:12px}
   .reward-grid{grid-template-columns:1fr 1fr;gap:12px}
   .grid{gap:14px}
@@ -527,11 +530,15 @@ const rewards=[
   {emo:'⏰',n:'Extra 30-min Break',d:'A little breathing room',cost:400,cat:'Perks',stock:'∞',bg:'linear-gradient(135deg,#fef9c3,#fef08a)'},
   {emo:'🎧',n:'Wireless Headphones',d:'Noise-cancelling, on us',cost:3800,cat:'Merch',stock:'4 left',bg:'linear-gradient(135deg,#f3e8ff,#e9d5ff)'},
 ];
+// Company core values — recognition ties to these (Nectar / WorkTango style)
+const VALUES=['Teamwork','Ownership','Customer First','Innovation','Integrity'];
 let feed=[
-  {who:'Sarah Chen',av:'SC',color:TEAM[0].color,t:'2h',pts:50,beh:'Helped train a new employee',body:'Onboarded our new hire like a pro — patient, thorough, and kind the whole way through.',likes:14,claps:9,liked:false,clapped:false,cmts:3},
-  {who:'Marcus Bell',av:'MB',color:TEAM[1].color,t:'5h',pts:100,beh:'Employee of the Month',body:'Marcus turned a frustrated customer into our biggest fan this week. Legendary recovery. 🎉',likes:31,claps:22,liked:true,clapped:false,cmts:8},
-  {who:'Priya Nair',av:'PN',color:TEAM[3].color,t:'Yesterday',pts:75,beh:'Closed a sale',body:'Sealed the enterprise deal we’ve been chasing all quarter. Huge for the team target.',likes:19,claps:12,liked:false,clapped:true,cmts:4},
-  {who:'Diego Ramos',av:'DR',color:TEAM[4].color,t:'Yesterday',pts:30,beh:'Safety win',body:'Spotted a floor hazard before anyone slipped. Quiet hero energy.',likes:11,claps:6,liked:false,clapped:false,cmts:1},
+  {who:'Sarah Chen',av:'SC',color:TEAM[0].color,t:'2h',pts:50,beh:'Helped train a new employee',value:'Teamwork',body:'Onboarded our new hire like a pro — patient, thorough, and kind the whole way through.',likes:14,claps:9,liked:false,clapped:false,cmts:3},
+  {type:'anniversary',who:'Marcus Bell',av:'MB',color:TEAM[1].color,t:'3h',years:5,body:'celebrates 5 years at the company today! 🎉'},
+  {who:'Marcus Bell',av:'MB',color:TEAM[1].color,t:'5h',pts:100,beh:'Employee of the Month',value:'Customer First',body:'Marcus turned a frustrated customer into our biggest fan this week. Legendary recovery. 🎉',likes:31,claps:22,liked:true,clapped:false,cmts:8},
+  {who:'Priya Nair',av:'PN',color:TEAM[3].color,t:'Yesterday',pts:75,beh:'Closed a sale',value:'Ownership',body:'Sealed the enterprise deal we’ve been chasing all quarter. Huge for the team target.',likes:19,claps:12,liked:false,clapped:true,cmts:4},
+  {type:'birthday',who:'Aisha Khan',av:'AK',color:TEAM[5].color,t:'Yesterday',body:'has a birthday today — wish them well! 🎂'},
+  {who:'Diego Ramos',av:'DR',color:TEAM[4].color,t:'Yesterday',pts:30,beh:'Safety win',value:'Integrity',body:'Spotted a floor hazard before anyone slipped. Quiet hero energy.',likes:11,claps:6,liked:false,clapped:false,cmts:1},
 ];
 let notifs=[
   {ic:'🎉',bg:'var(--grad-soft)',txt:'<b>Sarah Chen</b> recognized you: “Great call handling today!” <b>+25 pts</b>',time:'12m ago',unread:true},
@@ -542,7 +549,7 @@ let notifs=[
 ];
 
 // ---- App state ----
-let state={role:'employee',view:'home',points:3940,level:14,xp:640,xpMax:1000,streak:12,rewardCat:'All',selPeople:new Set(),selBeh:null,lbScope:'company'};
+let state={role:'employee',view:'home',points:3940,level:14,xp:640,xpMax:1000,streak:12,giveBalance:150,selValue:'Teamwork',rewardCat:'All',selPeople:new Set(),selBeh:null,lbScope:'company'};
 
 // ---- Navigation config ----
 const navConfig={
@@ -676,10 +683,17 @@ function goalCard(g){
 function renderFeed(v){
   v.innerHTML=`<div class="feed">
     <div class="card composer">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:650"><span style="font-size:17px">🎁</span> <b style="font-variant-numeric:tabular-nums">${state.giveBalance}</b> points to give this month</div>
+        <span class="pill green">Resets in 8 days</span>
+      </div>
       <div class="row">
         <div class="avatar" style="width:42px;height:42px;font-size:15px">JD</div>
         <input id="composerInput" placeholder="Recognize a teammate…" onkeydown="if(event.key==='Enter')postRecognition()"/>
         <button class="btn primary" onclick="postRecognition()">${I.spark}Give</button>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:12px" id="valueChips">
+        ${VALUES.map(val=>`<button class="chip ${state.selValue===val?'active':''}" onclick="state.selValue='${val}';$$('#valueChips .chip').forEach(x=>x.classList.remove('active'));this.classList.add('active')">#${val.replace(/ /g,'')}</button>`).join('')}
       </div>
     </div>
     <div id="feedList"></div>
@@ -688,13 +702,29 @@ function renderFeed(v){
 }
 function postCard(p,idx){
   const c=el('div','card post');
+  if(p.type==='anniversary'||p.type==='birthday'){
+    const emo=p.type==='birthday'?'🎂':'🎊';
+    const grad=p.type==='birthday'?'linear-gradient(135deg,var(--amber-bg),var(--surface))':'var(--grad-soft)';
+    c.style.background=grad;
+    c.innerHTML=`<div class="p-head">
+        <div class="avatar av" style="background:${p.color}">${p.av}</div>
+        <div style="flex:1"><div class="p-who">${p.who}</div><div class="p-time">${p.t} ago · Celebration</div></div>
+        <span style="font-size:26px">${emo}</span>
+      </div>
+      <div class="p-body"><b>${p.who}</b> ${p.body}</div>
+      <div class="p-actions">
+        <button class="react-btn" onclick="celebrate(this)"><span class="pop" style="font-size:16px">🎉</span> <span>Celebrate</span></button>
+        <button class="react-btn" onclick="toast('💬','Leave a note in the full app')">${I.comment} <span>Comment</span></button>
+      </div>`;
+    return c;
+  }
   c.innerHTML=`
     <div class="p-head">
       <div class="avatar av" style="background:${p.color}">${p.av}</div>
-      <div style="flex:1"><div class="p-who">${p.who}</div><div class="p-time">${p.t} ago${p.t.includes('day')||p.t.includes('Yester')?'':''} · Sales</div></div>
+      <div style="flex:1"><div class="p-who">${p.who}</div><div class="p-time">${p.t} ago · Sales</div></div>
       <span class="award-chip">${I.coin}+${p.pts}</span>
     </div>
-    ${p.beh?`<div class="p-behavior">${badgeEmojiFor(p.beh)} ${p.beh}</div>`:''}
+    ${p.beh?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><span class="p-behavior" style="margin:0">${badgeEmojiFor(p.beh)} ${p.beh}</span>${p.value?`<span class="pill brand" style="align-self:center">#${p.value.replace(/ /g,'')}</span>`:''}</div>`:''}
     <div class="p-body">${p.body}</div>
     <div class="p-actions">
       <button class="react-btn ${p.liked?'on':''}" onclick="react(${idx},'like',this)"><span class="pop">${I.heart}</span> <span>${p.likes}</span></button>
@@ -703,6 +733,7 @@ function postCard(p,idx){
     </div>`;
   return c;
 }
+function celebrate(btn){btn.classList.add('on');burst(btn);const s=btn.querySelector('span:last-child');s.textContent='Celebrated';}
 function badgeEmojiFor(beh){const b=behaviors.find(x=>beh.toLowerCase().includes(x.t.toLowerCase().split(' ')[0]));return b?b.emo:'✨'}
 function react(idx,type,btn){
   const p=feed[idx];
@@ -713,8 +744,11 @@ function react(idx,type,btn){
 }
 function postRecognition(){
   const inp=$('#composerInput');const txt=inp.value.trim();if(!txt){inp.focus();return;}
-  feed.unshift({who:'Jordan Diaz',av:'JD',color:'var(--grad)',t:'just now',pts:25,beh:'Helped a teammate',body:txt,likes:0,claps:0,liked:false,clapped:false,cmts:0});
-  renderFeed($('#view'));confettiBurst();toast('🎉','Recognition posted · +25 pts awarded');
+  const give=25;
+  if(state.giveBalance<give){toast('⚠️','Not enough points to give this month');return;}
+  state.giveBalance-=give;
+  feed.unshift({who:'Jordan Diaz',av:'JD',color:'var(--grad)',t:'just now',pts:give,beh:'Helped a teammate',value:state.selValue,body:txt,likes:0,claps:0,liked:false,clapped:false,cmts:0});
+  renderFeed($('#view'));confettiBurst();toast('🎉',`Recognition posted · +${give} pts · #${state.selValue.replace(/ /g,'')}`);
 }
 
 // ---------- REWARDS ----------
@@ -897,7 +931,7 @@ function submitAward(){
   const b=behaviors[state.selBeh];const names=[...state.selPeople].map(id=>TEAM.find(p=>p.id===id).name);
   const note=$('#awardNote').value.trim();
   names.forEach(n=>{const p=TEAM.find(x=>x.name===n);
-    feed.unshift({who:n,av:p.av,color:p.color,t:'just now',pts:b.p,beh:b.t,body:note||`Recognized for ${b.t.toLowerCase()}. Keep it up!`,likes:0,claps:0,liked:false,clapped:false,cmts:0});
+    feed.unshift({who:n,av:p.av,color:p.color,t:'just now',pts:b.p,beh:b.t,value:VALUES[Math.floor(Math.random()*VALUES.length)],body:note||`Recognized for ${b.t.toLowerCase()}. Keep it up!`,likes:0,claps:0,liked:false,clapped:false,cmts:0});
   });
   showModal(b.emo,'Points awarded! 🎉',`<b>+${b.p} pts</b> to <b>${names.join(', ')}</b> for “${b.t}”. They’ve been notified and it’s live on the feed.`,()=>{
     state.selPeople.clear();state.selBeh=null;confettiBurst();toast('✨',`Awarded +${b.p} to ${names.length} teammate${names.length>1?'s':''}`);render();
