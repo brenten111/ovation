@@ -1059,9 +1059,9 @@ function renderSettings(v){
   <div class="card" style="padding:22px;margin-top:18px">
     <h3 style="font-size:16px;font-weight:750;margin-bottom:4px">Appearance</h3>
     <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Choose how Ovation looks on this device</p>
-    ${(()=>{const cur=document.documentElement.getAttribute('data-theme')||'light';return `<div style="display:flex;gap:10px">
-      <button onclick="setTheme('light')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;border-radius:var(--r-sm);border:2px solid ${cur==='light'?'var(--brand-1)':'var(--border)'};background:${cur==='light'?'var(--grad-soft)':'var(--surface-2)'};font-weight:650;font-size:14px">${I.sun} Light</button>
-      <button onclick="setTheme('dark')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;border-radius:var(--r-sm);border:2px solid ${cur==='dark'?'var(--brand-1)':'var(--border)'};background:${cur==='dark'?'var(--grad-soft)':'var(--surface-2)'};font-weight:650;font-size:14px">${I.moon} Dark</button>
+    ${(()=>{const cur=document.documentElement.getAttribute('data-theme')||'light';const sun=I.sun.replace('<svg ','<svg width="19" height="19" ');const moon=I.moon.replace('<svg ','<svg width="19" height="19" ');return `<div style="display:flex;gap:10px">
+      <button onclick="setTheme('light')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;border-radius:var(--r-sm);border:2px solid ${cur==='light'?'var(--brand-1)':'var(--border)'};background:${cur==='light'?'var(--grad-soft)':'var(--surface-2)'};font-weight:650;font-size:14px;color:var(--text)">${sun} Light</button>
+      <button onclick="setTheme('dark')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;border-radius:var(--r-sm);border:2px solid ${cur==='dark'?'var(--brand-1)':'var(--border)'};background:${cur==='dark'?'var(--grad-soft)':'var(--surface-2)'};font-weight:650;font-size:14px;color:var(--text)">${moon} Dark</button>
     </div>`})()}
   </div>
   <div class="card" style="padding:22px;margin-top:18px">
