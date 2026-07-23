@@ -405,8 +405,8 @@ textarea.note:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(110,16
   <!-- SIDEBAR -->
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo">O</div>
-      <div class="name">Ov<b>ation</b></div>
+      <div class="logo" id="brandLogo">O</div>
+      <div class="name" id="brandName">Ov<b>ation</b></div>
     </div>
     <nav id="nav"></nav>
     <div class="side-foot">
@@ -533,13 +533,15 @@ const rewards=[
 // Company core values — recognition ties to these (Nectar / WorkTango style)
 const VALUES=['Teamwork','Ownership','Customer First','Innovation','Integrity'];
 let feed=[
-  {who:'Sarah Chen',av:'SC',color:TEAM[0].color,t:'2h',pts:50,beh:'Helped train a new employee',value:'Teamwork',body:'Onboarded our new hire like a pro — patient, thorough, and kind the whole way through.',likes:14,claps:9,liked:false,clapped:false,cmts:3},
-  {type:'anniversary',who:'Marcus Bell',av:'MB',color:TEAM[1].color,t:'3h',years:5,body:'celebrates 5 years at the company today! 🎉'},
-  {who:'Marcus Bell',av:'MB',color:TEAM[1].color,t:'5h',pts:100,beh:'Employee of the Month',value:'Customer First',body:'Marcus turned a frustrated customer into our biggest fan this week. Legendary recovery. 🎉',likes:31,claps:22,liked:true,clapped:false,cmts:8},
-  {who:'Priya Nair',av:'PN',color:TEAM[3].color,t:'Yesterday',pts:75,beh:'Closed a sale',value:'Ownership',body:'Sealed the enterprise deal we’ve been chasing all quarter. Huge for the team target.',likes:19,claps:12,liked:false,clapped:true,cmts:4},
-  {type:'birthday',who:'Aisha Khan',av:'AK',color:TEAM[5].color,t:'Yesterday',body:'has a birthday today — wish them well! 🎂'},
-  {who:'Diego Ramos',av:'DR',color:TEAM[4].color,t:'Yesterday',pts:30,beh:'Safety win',value:'Integrity',body:'Spotted a floor hazard before anyone slipped. Quiet hero energy.',likes:11,claps:6,liked:false,clapped:false,cmts:1},
+  {id:'p1',who:'Sarah Chen',av:'SC',color:TEAM[0].color,t:'2h',pts:50,beh:'Helped train a new employee',value:'Teamwork',body:'Onboarded our new hire like a pro — patient, thorough, and kind the whole way through.',likes:14,claps:9,liked:false,clapped:false,comments:[{who:'Priya Nair',av:'PN',color:TEAM[3].color,body:'So true — she made my first week!'},{who:'Tom Walsh',av:'TW',color:TEAM[6].color,gif:'🎉'}]},
+  {id:'a1',type:'anniversary',who:'Marcus Bell',av:'MB',color:TEAM[1].color,t:'3h',years:5,body:'celebrates 5 years at the company today! 🎉'},
+  {id:'p2',who:'Marcus Bell',av:'MB',color:TEAM[1].color,t:'5h',pts:100,beh:'Employee of the Month',value:'Customer First',body:'Marcus turned a frustrated customer into our biggest fan this week. Legendary recovery. 🎉',likes:31,claps:22,liked:true,clapped:false,comments:[{who:'Sarah Chen',av:'SC',color:TEAM[0].color,body:'Legend! 👏'}]},
+  {id:'p3',who:'Priya Nair',av:'PN',color:TEAM[3].color,t:'Yesterday',pts:75,beh:'Closed a sale',value:'Ownership',body:'Sealed the enterprise deal we’ve been chasing all quarter. Huge for the team target.',likes:19,claps:12,liked:false,clapped:true,comments:[]},
+  {id:'b1',type:'birthday',who:'Aisha Khan',av:'AK',color:TEAM[5].color,t:'Yesterday',body:'has a birthday today — wish them well! 🎂'},
+  {id:'p4',who:'Diego Ramos',av:'DR',color:TEAM[4].color,t:'Yesterday',pts:30,beh:'Safety win',value:'Integrity',body:'Spotted a floor hazard before anyone slipped. Quiet hero energy.',likes:11,claps:6,liked:false,clapped:false,comments:[]},
 ];
+const GIFS=['🎉','👏','🔥','💯','🙌','🚀','😍','🏆','⭐','💪','🎊','❤️'];
+let openComments=new Set();
 let notifs=[
   {ic:'🎉',bg:'var(--grad-soft)',txt:'<b>Sarah Chen</b> recognized you: “Great call handling today!” <b>+25 pts</b>',time:'12m ago',unread:true},
   {ic:'🏅',bg:'var(--amber-bg)',txt:'You unlocked the <b>Sales Champion</b> badge',time:'1h ago',unread:true},
@@ -549,7 +551,7 @@ let notifs=[
 ];
 
 // ---- App state ----
-let state={role:'employee',view:'home',points:3940,level:14,xp:640,xpMax:1000,streak:12,giveBalance:150,selValue:'Teamwork',rewardCat:'All',selPeople:new Set(),selBeh:null,lbScope:'company'};
+let state={role:'employee',view:'home',points:3940,level:14,xp:640,xpMax:1000,streak:12,giveBalance:150,selValue:'Teamwork',company:{name:'Ovation',color:'#5a9bd8',logo:null},rewardCat:'All',selPeople:new Set(),selBeh:null,lbScope:'company'};
 
 // ---- Navigation config ----
 const navConfig={
@@ -714,10 +716,12 @@ function postCard(p,idx){
       <div class="p-body"><b>${p.who}</b> ${p.body}</div>
       <div class="p-actions">
         <button class="react-btn" onclick="celebrate(this)"><span class="pop" style="font-size:16px">🎉</span> <span>Celebrate</span></button>
-        <button class="react-btn" onclick="toast('💬','Leave a note in the full app')">${I.comment} <span>Comment</span></button>
-      </div>`;
+        <button class="react-btn" onclick="toggleComments('${p.id}')">${I.comment} <span>Comment</span></button>
+      </div>
+      ${commentThread(p)}`;
     return c;
   }
+  const nc=(p.comments||[]).length;
   c.innerHTML=`
     <div class="p-head">
       <div class="avatar av" style="background:${p.color}">${p.av}</div>
@@ -729,9 +733,47 @@ function postCard(p,idx){
     <div class="p-actions">
       <button class="react-btn ${p.liked?'on':''}" onclick="react(${idx},'like',this)"><span class="pop">${I.heart}</span> <span>${p.likes}</span></button>
       <button class="react-btn ${p.clapped?'on':''}" onclick="react(${idx},'clap',this)"><span class="pop" style="font-size:16px">👏</span> <span>${p.claps}</span></button>
-      <button class="react-btn" onclick="toast('💬','Comments coming soon in the full app')">${I.comment} <span>${p.cmts}</span></button>
-    </div>`;
+      <button class="react-btn ${openComments.has(p.id)?'on':''}" onclick="toggleComments('${p.id}')">${I.comment} <span>${nc}</span></button>
+    </div>
+    ${commentThread(p)}`;
   return c;
+}
+function commentThread(p){
+  if(!openComments.has(p.id))return '';
+  const list=(p.comments||[]).map(cm=>`
+    <div style="display:flex;gap:10px;margin-top:12px">
+      <div class="avatar" style="width:32px;height:32px;font-size:12px;background:${cm.color}">${cm.av}</div>
+      <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:9px 13px;max-width:100%">
+        <div style="font-weight:650;font-size:12.5px">${cm.who}</div>
+        ${cm.body?`<div style="font-size:13.5px;margin-top:2px">${cm.body}</div>`:''}
+        ${cm.gif?`<div style="font-size:34px;line-height:1.1;margin-top:2px">${cm.gif}</div>`:''}
+      </div>
+    </div>`).join('');
+  return `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border-2)">
+    ${list}
+    <div id="gifs-${p.id}" style="display:none;flex-wrap:wrap;gap:6px;margin-top:12px">
+      ${GIFS.map(g=>`<button onclick="addComment('${p.id}','','${g}')" style="width:40px;height:40px;border-radius:11px;border:1px solid var(--border);background:var(--surface-2);font-size:21px;transition:.15s" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='none'">${g}</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:9px;align-items:center;margin-top:12px">
+      <div class="avatar" style="width:32px;height:32px;font-size:12px;background:var(--grad)">JD</div>
+      <input id="ci-${p.id}" placeholder="Add a comment…" onkeydown="if(event.key==='Enter'){addComment('${p.id}',this.value,'')}" style="flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-full);padding:9px 15px;font-size:13.5px;color:var(--text);outline:none"/>
+      <button class="icon-btn" title="Add a GIF" onclick="const g=document.getElementById('gifs-${p.id}');g.style.display=g.style.display==='none'?'flex':'none'" style="width:36px;height:36px;font-weight:800;font-size:12px;border:1px solid var(--border)">GIF</button>
+      <button class="btn primary sm" onclick="addComment('${p.id}',document.getElementById('ci-${p.id}').value,'')">Post</button>
+    </div>
+  </div>`;
+}
+function toggleComments(id){openComments.has(id)?openComments.delete(id):openComments.add(id);rerenderFeed();}
+function addComment(id,text,gif){
+  const p=feed.find(x=>x.id===id);if(!p)return;
+  if(!p.comments)p.comments=[];
+  text=(text||'').trim();
+  if(!text&&!gif)return;
+  p.comments.push({who:'Jordan Diaz',av:'JD',color:'var(--grad)',body:text,gif:gif||''});
+  openComments.add(id);rerenderFeed();
+}
+function rerenderFeed(){
+  if(state.view==='feed')renderFeed($('#view'));
+  else render();
 }
 function celebrate(btn){btn.classList.add('on');burst(btn);const s=btn.querySelector('span:last-child');s.textContent='Celebrated';}
 function badgeEmojiFor(beh){const b=behaviors.find(x=>beh.toLowerCase().includes(x.t.toLowerCase().split(' ')[0]));return b?b.emo:'✨'}
@@ -747,7 +789,7 @@ function postRecognition(){
   const give=25;
   if(state.giveBalance<give){toast('⚠️','Not enough points to give this month');return;}
   state.giveBalance-=give;
-  feed.unshift({who:'Jordan Diaz',av:'JD',color:'var(--grad)',t:'just now',pts:give,beh:'Helped a teammate',value:state.selValue,body:txt,likes:0,claps:0,liked:false,clapped:false,cmts:0});
+  feed.unshift({id:'n'+Date.now(),who:'Jordan Diaz',av:'JD',color:'var(--grad)',t:'just now',pts:give,beh:'Helped a teammate',value:state.selValue,body:txt,likes:0,claps:0,liked:false,clapped:false,comments:[]});
   renderFeed($('#view'));confettiBurst();toast('🎉',`Recognition posted · +${give} pts · #${state.selValue.replace(/ /g,'')}`);
 }
 
@@ -931,7 +973,7 @@ function submitAward(){
   const b=behaviors[state.selBeh];const names=[...state.selPeople].map(id=>TEAM.find(p=>p.id===id).name);
   const note=$('#awardNote').value.trim();
   names.forEach(n=>{const p=TEAM.find(x=>x.name===n);
-    feed.unshift({who:n,av:p.av,color:p.color,t:'just now',pts:b.p,beh:b.t,value:VALUES[Math.floor(Math.random()*VALUES.length)],body:note||`Recognized for ${b.t.toLowerCase()}. Keep it up!`,likes:0,claps:0,liked:false,clapped:false,cmts:0});
+    feed.unshift({id:'m'+Date.now()+Math.random().toString(36).slice(2,6),who:n,av:p.av,color:p.color,t:'just now',pts:b.p,beh:b.t,value:VALUES[Math.floor(Math.random()*VALUES.length)],body:note||`Recognized for ${b.t.toLowerCase()}. Keep it up!`,likes:0,claps:0,liked:false,clapped:false,comments:[]});
   });
   showModal(b.emo,'Points awarded! 🎉',`<b>+${b.p} pts</b> to <b>${names.join(', ')}</b> for “${b.t}”. They’ve been notified and it’s live on the feed.`,()=>{
     state.selPeople.clear();state.selBeh=null;confettiBurst();toast('✨',`Awarded +${b.p} to ${names.length} teammate${names.length>1?'s':''}`);render();
@@ -988,20 +1030,28 @@ function renderSettings(v){
   v.innerHTML=`
   <div class="two-col" style="align-items:start">
     <div class="card" style="padding:22px">
-      <h3 style="font-size:16px;font-weight:750;margin-bottom:4px">Branding</h3>
-      <p style="font-size:13px;color:var(--text-3);margin-bottom:18px">Make Ovation feel like your company</p>
+      <h3 style="font-size:16px;font-weight:750;margin-bottom:4px">Branding <span class="pill green" style="vertical-align:middle">Live preview</span></h3>
+      <p style="font-size:13px;color:var(--text-3);margin-bottom:18px">Changes apply across the app instantly</p>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">Company name</div>
+      <input id="brandNameInput" value="${state.company.name}" oninput="setCompanyName(this.value)" style="width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-sm);padding:11px 14px;font-size:14px;color:var(--text);outline:none;margin-bottom:18px"/>
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">Logo</div>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
-        <div class="avatar" style="width:56px;height:56px;border-radius:16px;font-size:22px;background:var(--grad)">A</div>
-        <button class="btn ghost sm">Upload logo</button>
+        <div class="avatar" id="logoPreview" style="width:56px;height:56px;border-radius:16px;font-size:22px;background:var(--grad);background-size:cover;background-position:center">${state.company.logo?'':(state.company.name[0]||'O')}</div>
+        <label class="btn ghost sm" style="cursor:pointer">Upload logo<input type="file" accept="image/*" style="display:none" onchange="uploadLogo(event)"/></label>
       </div>
       <div style="font-size:13px;font-weight:600;margin-bottom:10px">Brand color</div>
-      <div style="display:flex;gap:10px">${['#6366f1','#ec4899','#f59e0b','#10b981','#0ea5e9','#ef4444'].map((c,i)=>`<button onclick="setBrand('${c}')" style="width:34px;height:34px;border-radius:10px;background:${c};box-shadow:${i===0?'0 0 0 2px var(--surface),0 0 0 4px '+c:'none'}"></button>`).join('')}</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${['#5a9bd8','#6366f1','#ec4899','#f59e0b','#10b981','#ef4444','#14b8a6'].map(c=>`<button onclick="setBrand('${c}')" style="width:34px;height:34px;border-radius:10px;background:${c};box-shadow:${state.company.color.toLowerCase()===c?'0 0 0 2px var(--surface),0 0 0 4px '+c:'none'}"></button>`).join('')}
+        <label style="width:34px;height:34px;border-radius:10px;border:1px dashed var(--border);display:grid;place-items:center;cursor:pointer;font-size:16px" title="Custom color">🎨<input type="color" value="${state.company.color}" oninput="setBrand(this.value)" style="opacity:0;width:0;height:0;position:absolute"/></label>
+      </div>
     </div>
     <div class="card" style="padding:22px">
       <h3 style="font-size:16px;font-weight:750;margin-bottom:14px">Workspace</h3>
-      ${[['🏢','Departments','4 active'],['📍','Locations','3 sites'],['👥','Members','24 people'],['🎖️','Custom behaviors','8 defined'],['🎁','Rewards catalog','9 items'],['🔗','Integrations','Slack, Teams — soon']].map(x=>`
+      ${[['🏢','Departments','4 active'],['📍','Locations','3 sites'],['👥','Members','24 people'],['🎖️','Custom behaviors','8 defined'],['🏅','Custom badges',badges.length+' total'],['🎁','Rewards catalog','9 items']].map(x=>`
         <div class="lb-row" style="padding:12px 0"><div style="font-size:19px;width:26px">${x[0]}</div><div class="who"><div class="n">${x[1]}</div></div><div class="d" style="font-size:12.5px;color:var(--text-3)">${x[2]}</div></div>`).join('')}
-      <button class="btn primary" style="width:100%;margin-top:14px" onclick="openInviteModal()">${I.users} Invite employees</button>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn ghost sm" style="flex:1" onclick="openBadgeModal()">🏅 New badge</button>
+        <button class="btn primary sm" style="flex:1" onclick="openInviteModal()">${I.users} Invite</button>
+      </div>
     </div>
   </div>
   <div class="card" style="padding:22px;margin-top:18px">
@@ -1012,7 +1062,53 @@ function renderSettings(v){
       <span style="position:absolute;top:3px;left:${x[1]?'22px':'3px'};width:21px;height:21px;border-radius:99px;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></span></button></div>`).join('')}
   </div>`;
 }
-function setBrand(c){toast('🎨','Brand color updated (demo)')}
+// ---------- Live branding ----------
+function _hx(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(x=>x+x).join('');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+function lighten(hex,amt){const [r,g,b]=_hx(hex);const m=v=>Math.round(v+(255-v)*amt);return `#${[m(r),m(g),m(b)].map(v=>v.toString(16).padStart(2,'0')).join('')}`;}
+function hexA(hex,a){const [r,g,b]=_hx(hex);return `rgba(${r},${g},${b},${a})`;}
+function applyBrand(color){
+  const s=document.documentElement.style;const c2=lighten(color,.14),c3=lighten(color,.30);
+  s.setProperty('--brand-1',color);s.setProperty('--brand-2',c2);s.setProperty('--brand-3',c3);
+  s.setProperty('--grad',`linear-gradient(135deg,${color} 0%,${c2} 50%,${c3} 100%)`);
+  s.setProperty('--grad-soft',`linear-gradient(135deg,${hexA(color,.16)},${hexA(c3,.12)})`);
+  const tc=document.querySelector('meta[name="theme-color"]');if(tc)tc.setAttribute('content',color);
+}
+function setBrand(c){state.company.color=c;applyBrand(c);if(state.view==='settings')render();toast('🎨','Brand color updated');}
+function setCompanyName(name){
+  state.company.name=name||'Ovation';
+  const bn=$('#brandName');if(bn)bn.innerHTML=name?name.replace(/</g,'&lt;'):'Ov<b>ation</b>';
+  if(!state.company.logo){const lp=$('#logoPreview');if(lp)lp.textContent=(name[0]||'O').toUpperCase();const bl=$('#brandLogo');if(bl&&!state.company.logo)bl.textContent=(name[0]||'O').toUpperCase();}
+}
+function uploadLogo(ev){
+  const f=ev.target.files&&ev.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=e=>{state.company.logo=e.target.result;
+    const set=(id)=>{const el2=$('#'+id);if(el2){el2.style.backgroundImage=`url(${e.target.result})`;el2.textContent='';}};
+    set('brandLogo');set('logoPreview');toast('🖼️','Logo updated');
+  };
+  rd.readAsDataURL(f);
+}
+function openBadgeModal(){
+  const box=$('#modalBox');
+  const emojis=['🏅','🌟','🚀','🔥','🧠','🤝','🛡️','💎','🎯','🏆'];
+  box.innerHTML=`<div class="m-emo">🏅</div><h2>Create a badge</h2>
+    <div style="margin-top:18px;text-align:left">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">Icon</div>
+      <div id="badgeEmojis" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">${emojis.map((e,i)=>`<button onclick="window._badgeEmo='${e}';$$('#badgeEmojis button').forEach(x=>x.style.borderColor='var(--border)');this.style.borderColor='var(--brand-1)'" style="width:42px;height:42px;border-radius:11px;border:2px solid ${i===0?'var(--brand-1)':'var(--border)'};background:var(--surface-2);font-size:22px">${e}</button>`).join('')}</div>
+      <input class="note" style="min-height:auto" id="badgeName" placeholder="Badge name (e.g. Culture Champion)"/>
+      <input class="note" style="min-height:auto;margin-top:10px" id="badgeCriteria" placeholder="How to unlock it (e.g. 5 peer shout-outs)"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px"><button class="btn ghost" style="flex:1" onclick="closeModal()">Cancel</button>
+    <button class="btn primary" style="flex:1" onclick="createBadge()">Create badge</button></div>`;
+  window._badgeEmo='🏅';$('#modalScrim').classList.add('open');
+}
+function createBadge(){
+  const name=$('#badgeName').value.trim();if(!name){toast('⚠️','Give the badge a name');return;}
+  const crit=$('#badgeCriteria').value.trim()||'Custom badge';
+  badges.unshift({emo:window._badgeEmo||'🏅',n:name,d:crit,on:true});
+  closeModal();confettiBurst();toast('🏅',`Badge “${name}” created`);
+  if(state.view==='settings'||state.view==='profile')render();
+}
 
 // ---------- Modals ----------
 function showModal(emo,title,body,onConfirm,btnLabel){
