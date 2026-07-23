@@ -433,9 +433,7 @@ textarea.note:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(110,16
         <span class="dot" id="notifDot"></span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
       </button>
-      <button class="icon-btn" onclick="go('settings')" title="Settings" id="settingsBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 13.6H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7L4.5 6.9a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 4.6V4.5a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1A1.6 1.6 0 0 0 21 10.4a2 2 0 1 1 0 4A1.6 1.6 0 0 0 19.4 15z"/></svg>
-      </button>
+      <div class="logo" id="topLogo" title="Ovation" style="width:38px;height:38px;background-size:cover;background-position:center">O</div>
     </header>
     <div class="content"><div class="view" id="view"></div></div>
   </div>
@@ -1087,14 +1085,14 @@ function setBrand(c){state.company.color=c;applyBrand(c);if(state.view==='settin
 function setCompanyName(name){
   state.company.name=name||'Ovation';
   const bn=$('#brandName');if(bn)bn.innerHTML=name?name.replace(/</g,'&lt;'):'Ov<b>ation</b>';
-  if(!state.company.logo){const lp=$('#logoPreview');if(lp)lp.textContent=(name[0]||'O').toUpperCase();const bl=$('#brandLogo');if(bl&&!state.company.logo)bl.textContent=(name[0]||'O').toUpperCase();}
+  if(!state.company.logo){const c=(name[0]||'O').toUpperCase();['logoPreview','brandLogo','topLogo'].forEach(id=>{const e2=$('#'+id);if(e2)e2.textContent=c;});}
 }
 function uploadLogo(ev){
   const f=ev.target.files&&ev.target.files[0];if(!f)return;
   const rd=new FileReader();
   rd.onload=e=>{state.company.logo=e.target.result;
     const set=(id)=>{const el2=$('#'+id);if(el2){el2.style.backgroundImage=`url(${e.target.result})`;el2.textContent='';}};
-    set('brandLogo');set('logoPreview');toast('🖼️','Logo updated');
+    set('brandLogo');set('logoPreview');set('topLogo');toast('🖼️','Logo updated');
   };
   rd.readAsDataURL(f);
 }
