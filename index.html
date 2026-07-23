@@ -429,10 +429,12 @@ textarea.note:focus{border-color:var(--brand-2);box-shadow:0 0 0 3px rgba(110,16
         <button data-role="employee" class="active" onclick="setRole('employee')">Employee</button>
         <button data-role="manager" onclick="setRole('manager')">Manager</button>
       </div>
-      <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="themeBtn"></button>
       <button class="icon-btn" onclick="openDrawer()" title="Notifications">
         <span class="dot" id="notifDot"></span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      </button>
+      <button class="icon-btn" onclick="go('settings')" title="Settings" id="settingsBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 13.6H3a2 2 0 1 1 0-4h.1A1.6 1.6 0 0 0 4.6 7L4.5 6.9a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 10 4.6V4.5a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8v.1A1.6 1.6 0 0 0 21 10.4a2 2 0 1 1 0 4A1.6 1.6 0 0 0 19.4 15z"/></svg>
       </button>
     </header>
     <div class="content"><div class="view" id="view"></div></div>
@@ -1055,6 +1057,14 @@ function renderSettings(v){
     </div>
   </div>
   <div class="card" style="padding:22px;margin-top:18px">
+    <h3 style="font-size:16px;font-weight:750;margin-bottom:4px">Appearance</h3>
+    <p style="font-size:13px;color:var(--text-3);margin-bottom:14px">Choose how Ovation looks on this device</p>
+    ${(()=>{const cur=document.documentElement.getAttribute('data-theme')||'light';return `<div style="display:flex;gap:10px">
+      <button onclick="setTheme('light')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;border-radius:var(--r-sm);border:2px solid ${cur==='light'?'var(--brand-1)':'var(--border)'};background:${cur==='light'?'var(--grad-soft)':'var(--surface-2)'};font-weight:650;font-size:14px">${I.sun} Light</button>
+      <button onclick="setTheme('dark')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:9px;padding:14px;border-radius:var(--r-sm);border:2px solid ${cur==='dark'?'var(--brand-1)':'var(--border)'};background:${cur==='dark'?'var(--grad-soft)':'var(--surface-2)'};font-weight:650;font-size:14px">${I.moon} Dark</button>
+    </div>`})()}
+  </div>
+  <div class="card" style="padding:22px;margin-top:18px">
     <h3 style="font-size:16px;font-weight:750;margin-bottom:14px">Notifications</h3>
     ${[['Push notifications',true],['Email notifications',true],['Weekly digest',true],['Slack alerts (integration)',false]].map(x=>`
       <div class="lb-row" style="padding:12px 0"><div class="who"><div class="n">${x[0]}</div></div>
@@ -1196,18 +1206,19 @@ function animateBars(){
 }
 
 // ---------- Theme ----------
+function setTheme(mode){
+  document.documentElement.setAttribute('data-theme',mode);
+  if(state.view==='settings')render();
+}
 function toggleTheme(){
   const cur=document.documentElement.getAttribute('data-theme');
-  const next=cur==='light'?'dark':'light';
-  document.documentElement.setAttribute('data-theme',next);
-  $('#themeBtn').innerHTML=next==='light'?I.moon:I.sun;
+  setTheme(cur==='light'?'dark':'light');
 }
 
 // ---------- Helpers ----------
 function updateEverywhere(){}
 
 // ---------- Boot ----------
-$('#themeBtn').innerHTML=I.moon;
 renderNav();render();updateNotifDot();
 
 // PWA: register service worker for offline + installability
